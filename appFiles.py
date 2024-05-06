@@ -42,7 +42,7 @@ class SquareGui(tk.Tk):
         self.menu.add_command(label="Ocr", command=self.ocr)
         self.menu.add_command(label="Switch Sides", command=self.switchside)
         self.menu.add_separator()
-        self.menu.add_command(label="Exit", command=self.quit)
+        self.menu.add_command(label="Exit", command=exit)
 
         self.bind("<Button-1>", self.show_menu)
 
