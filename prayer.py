@@ -44,10 +44,12 @@ class Prayers(CTk):
             asr = times[3].text
             maghrib = times[4].text
             ishaa = times[5].text
+
+            self.prayers = [fajr,duhur,asr,maghrib,ishaa]
             
             self.Text = f'Fajr: {fajr}\nDuhur: {duhur}\nAsr: {asr}\nMaghrib: {maghrib}\nIshaa: {ishaa}'
 
-            with open(self.filePath, 'w', encoding='utf-8') as file:
+            with open(self.filePath, 'w', encoding='utf-8' ) as file:
                 file.write(self.Text)
 
     def ui(self):
@@ -73,8 +75,9 @@ class Prayers(CTk):
         self.root.rowconfigure((1,2,4,7,8) ,weight=2)
         self.root.rowconfigure((3,5,6) ,weight=1)
         self.label =  CTkLabel(self.root,text=f"Prayer Times Today: \n\n{self.Text}" , font=("Arial", 14) ).grid(row=3,column=3)
+    
+        
 
     def main(self):
         self.ui()
         self.root.mainloop()
-
