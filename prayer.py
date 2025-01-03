@@ -1,83 +1,118 @@
 import os
-import requests 
-import bs4 
-from datetime import date
+import requests
+from datetime import date, datetime, timedelta
 from customtkinter import *
 
 class Prayers(CTk):
-    def __init__(self,pos,right):
+    def __init__(self, pos, right):
         super().__init__()
-        self.addressCheck()
         self.pos = pos
         self.right = right
-    
+        self.today_prayers = {}
+        self.tomorrow_prayers = {}
+        self.current_date = date.today()
+        self.tomorrow_date = self.current_date + timedelta(days=1)
+        self.addressCheck()
+
     def addressCheck(self):
-        today = date.today().strftime("%d,%m,%Y")
+        self.load_prayer_times(self.current_date, self.today_prayers)
+        self.load_prayer_times(self.tomorrow_date, self.tomorrow_prayers)
+
+    def load_prayer_times(self, date_obj, prayer_dict):
+        date_str = date_obj.strftime("%d-%m-%Y")
         directory = os.path.dirname(__file__)
         folder = "Prayer_Logs"
-        fileName = f"prayersTable_{today}.txt"
+        file_name = f"prayersTable_{date_str}.txt"
         address = os.path.join(directory, folder)
-        self.filePath = os.path.join(address, fileName)
+        file_path = os.path.join(address, file_name)
 
         if not os.path.exists(address):
             os.makedirs(address)
 
-        if os.path.exists(self.filePath):
-            print("found")
-            with open(self.filePath, 'r', encoding='utf-8') as file:
-                self.Text = file.read()
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as file:
+                lines = file.readlines()
+                for line in lines:
+                    prayer, time_str = line.strip().split(': ')
+                    prayer_dict[prayer] = self.convert_to_time(date_obj, time_str)
         else:
-            self.scrape()
+            self.get_prayer_times(date_obj, file_path, prayer_dict)
 
-    def scrape(self):
-            print("scraped")
-            query = "Prayer Times Istanbul"
-            url = "https://google.com/search?q=" + query 
+    def get_prayer_times(self, date_obj, file_path, prayer_dict):
+        date_str = date_obj.strftime("%d-%m-%Y")
+        url = f"https://api.aladhan.com/v1/timingsByCity/{date_str}?city=avcilar&country=turkey&method=13"
+        response = requests.get(url)
 
-            request_result = requests.get(url) 
-            soup = bs4.BeautifulSoup(request_result.text, "html.parser") 
+        if response.status_code == 200:
+            data = response.json()
+            timings = data['data']['timings']
 
-            times = soup.findAll("span", class_='r0bn4c rQMQod')
+            with open(file_path, 'w', encoding='utf-8') as file:
+                for prayer, time_str in timings.items():
+                    if prayer in ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']:
+                        time_obj = self.convert_to_time(date_obj, time_str)
+                        prayer_dict[prayer] = time_obj
+                        file.write(f"{prayer}: {time_str}\n")
 
-            fajr = times[0].text
-            duhur = times[2].text
-            asr = times[3].text
-            maghrib = times[4].text
-            ishaa = times[5].text
+    def convert_to_time(self, date_obj, time_str):
+        return datetime.strptime(f"{date_obj} {time_str}", "%Y-%m-%d %H:%M")
 
-            self.prayers = [fajr,duhur,asr,maghrib,ishaa]
-            
-            self.Text = f'Fajr: {fajr}\nDuhur: {duhur}\nAsr: {asr}\nMaghrib: {maghrib}\nIshaa: {ishaa}'
+    def time_until_next_prayer(self):
+        now = datetime.now()
+        all_prayers = list(self.today_prayers.items()) + list(self.tomorrow_prayers.items())
 
-            with open(self.filePath, 'w', encoding='utf-8' ) as file:
-                file.write(self.Text)
+        for prayer, time in all_prayers:
+            if now < time:
+                time_diff = time - now
+                return f"Time left for {prayer}: {str(time_diff).split('.')[0]}"
+        return "No upcoming prayers."
+
+    def update_daily(self):
+        if date.today() != self.current_date:
+            self.current_date = date.today()
+            self.tomorrow_date = self.current_date + timedelta(days=1)
+            self.addressCheck()
+            self.ui()
+
+    from customtkinter import CTk, CTkLabel, CTkFrame
 
     def ui(self):
         self.root = CTk()
         self.root.resizable(False, False)
         self.root.title("Prayer Times")
-        self.root.attributes('-alpha', 1)
+        self.root.after(60000, self.update_daily)
 
-        x, y = self.root.winfo_pointerxy()
+        # Positioning the window
+        offset = -150 if self.right else -20
+        posS = f"{int(self.pos[0]) + offset}+{int(self.pos[1]) + 40}"
+        self.root.geometry(f"250x300+{posS}")
 
-        print(self.pos)
+        # Widgets
+        self.prayer_frame = CTkFrame(self.root, corner_radius=10)
+        self.prayer_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
 
-        offset = -150  if self.right else -20
-        
-        posS = str(int(self.pos[0]) + offset) + "+" + str(int(self.pos[1]) + 40)
-        
-        print(posS)
+        self.label = CTkLabel(self.prayer_frame, text=f"📅 Prayer Times Today:\n\n{self.format_prayers(self.today_prayers)}", 
+                            font=("Arial", 14), justify="left")
+        self.label.grid(row=0, column=0, padx=10, pady=10)
 
-        self.root.geometry(f"200x200+{posS}")
-        
-        self.root.columnconfigure((1,2,4,5), weight=1)
-        self.root.columnconfigure(3, weight=2)
-        self.root.rowconfigure((1,2,4,7,8) ,weight=2)
-        self.root.rowconfigure((3,5,6) ,weight=1)
-        self.label =  CTkLabel(self.root,text=f"Prayer Times Today: \n\n{self.Text}" , font=("Arial", 14) ).grid(row=3,column=3)
-    
-        
+        self.next_prayer_frame = CTkFrame(self.root, corner_radius=10, fg_color="#313832")
+        self.next_prayer_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
+
+        time_left = self.time_until_next_prayer()
+        self.time_label = CTkLabel(self.next_prayer_frame, text=f"⏰ Next Prayer:\n{time_left}", 
+                                font=("Arial", 16, "bold"), text_color="#D1E8E2")
+        self.time_label.grid(row=0, column=0, padx=10, pady=10)
+
+        self.root.mainloop()
+
+
+    def format_prayers(self, prayers):
+        return '\n'.join([f"{prayer}: {time.strftime('%H:%M')}" for prayer, time in prayers.items()])
 
     def main(self):
         self.ui()
         self.root.mainloop()
+
+# Example usage:
+app = Prayers((100, 100), right=False)
+app.main()
