@@ -85,7 +85,7 @@ class Prayers(CTk):
         # Positioning the window
         offset = -150 if self.right else -20
         posS = f"{int(self.pos[0]) + offset}+{int(self.pos[1]) + 40}"
-        self.root.geometry(f"250x300+{posS}")
+        self.root.geometry(f"200x300+{posS}")
 
         # Widgets
         self.prayer_frame = CTkFrame(self.root, corner_radius=10)
@@ -95,12 +95,12 @@ class Prayers(CTk):
                             font=("Arial", 14), justify="left")
         self.label.grid(row=0, column=0, padx=10, pady=10)
 
-        self.next_prayer_frame = CTkFrame(self.root, corner_radius=10, fg_color="#313832")
+        self.next_prayer_frame = CTkFrame(self.root, corner_radius=10, fg_color="#3f4046")
         self.next_prayer_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
 
         time_left = self.time_until_next_prayer()
-        self.time_label = CTkLabel(self.next_prayer_frame, text=f"⏰ Next Prayer:\n{time_left}", 
-                                font=("Arial", 16, "bold"), text_color="#D1E8E2")
+        self.time_label = CTkLabel(self.next_prayer_frame, text=f"Next Prayer:\n{time_left}", 
+                                font=("Arial", 15), text_color="#dbdbdb")
         self.time_label.grid(row=0, column=0, padx=10, pady=10)
 
         self.root.mainloop()
@@ -113,6 +113,6 @@ class Prayers(CTk):
         self.ui()
         self.root.mainloop()
 
-# Example usage:
-app = Prayers((100, 100), right=False)
-app.main()
+# # Example usage:
+# app = Prayers((100, 100), right=False)
+# app.main()
