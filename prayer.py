@@ -1,7 +1,7 @@
 import os
 import requests
 from datetime import date, datetime, timedelta
-from customtkinter import *
+from customtkinter import CTk, CTkLabel, CTkFrame
 
 class Prayers(CTk):
     def __init__(self, pos, right):
@@ -64,7 +64,7 @@ class Prayers(CTk):
         for prayer, time in all_prayers:
             if now < time:
                 time_diff = time - now
-                return f"Time left for {prayer}: {str(time_diff).split('.')[0]}"
+                return f"{prayer}: {str(time_diff).split('.')[0]}"
         return "No upcoming prayers."
 
     def update_daily(self):
@@ -74,28 +74,25 @@ class Prayers(CTk):
             self.addressCheck()
             self.ui()
 
-    from customtkinter import CTk, CTkLabel, CTkFrame
-
     def ui(self):
-        self.root = CTk()
-        self.root.resizable(False, False)
-        self.root.title("Prayer Times")
-        self.root.after(60000, self.update_daily)
+        self.resizable(False, False)
+        self.title("Prayer Times")
+        self.after(60000, self.update_daily)
 
         # Positioning the window
         offset = -150 if self.right else -20
         posS = f"{int(self.pos[0]) + offset}+{int(self.pos[1]) + 40}"
-        self.root.geometry(f"200x300+{posS}")
+        self.geometry(f"200x300+{posS}")
 
         # Widgets
-        self.prayer_frame = CTkFrame(self.root, corner_radius=10)
-        self.prayer_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        self.prayer_frame = CTkFrame(self, corner_radius=10)
+        self.prayer_frame.grid(row=0, column=0, padx=10, pady=20, sticky="nsew")
 
         self.label = CTkLabel(self.prayer_frame, text=f"📅 Prayer Times Today:\n\n{self.format_prayers(self.today_prayers)}", 
                             font=("Arial", 14), justify="left")
         self.label.grid(row=0, column=0, padx=10, pady=10)
 
-        self.next_prayer_frame = CTkFrame(self.root, corner_radius=10, fg_color="#3f4046")
+        self.next_prayer_frame = CTkFrame(self, corner_radius=10, fg_color="#3f4046")
         self.next_prayer_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
 
         time_left = self.time_until_next_prayer()
@@ -103,16 +100,15 @@ class Prayers(CTk):
                                 font=("Arial", 15), text_color="#dbdbdb")
         self.time_label.grid(row=0, column=0, padx=10, pady=10)
 
-        self.root.mainloop()
-
+        self.mainloop()
 
     def format_prayers(self, prayers):
         return '\n'.join([f"{prayer}: {time.strftime('%H:%M')}" for prayer, time in prayers.items()])
 
     def main(self):
         self.ui()
-        self.root.mainloop()
 
-# # Example usage:
-# app = Prayers((100, 100), right=False)
-# app.main()
+
+# if __name__ == "__main__":
+#   app = Prayers((100, 100), right=False)
+#   app.main()
